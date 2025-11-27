@@ -1,44 +1,68 @@
 import os
-import bcrypt
+import hashlib
+import secrets
 
-from app import connect_database
-from app import create_users_table
-from app import get_user_by_username, insert_user
-
-# This file stores users for the legacy text-based system.
-# It's used for compatibility and migration to the database.
-USER_DATA_FILE = "user.txt"
+USER_DATA_FILE = "users.txt"
 
 
-
-#  PASSWORD SECURITY
-
-
-def hash_password(plain_text_password):
+def hash_password(password, salt=None):
     """
-    Hashes a plain text password using bcrypt.
-    - Adds a salt automatically.
-    - Returns the hashed password as a UTF-8 string.
+    Hashes a password with SHA-256 and a randomly generated salt.
+    Salt is returned so it can be stored for later password verification.
     """
-    password_bytes = plain_text_password.encode('utf-8')
-    salt = bcrypt.gensalt()
-    hashed_password = bcrypt.hashpw(password_bytes, salt)
-    return hashed_password.decode('utf-8')
+    if salt is None:
+        salt = secrets.token_hex(16)
+
+    hashed = hashlib.sha256((salt + password).encode()).hexdigest()
+    return hashed, salt
 
 
-def verify_password(plain_text_password, hashed_password):
+def register_user(username, password):
     """
-    Checks if a plain text password matches a stored bcrypt hash.
-    Returns True if the password is correct, False otherwise.
+    Saves a new user to the file in a secure hashed format.
+    Format stored:
+    username:salt:hashed_password
     """
-    password_bytes = plain_text_password.encode('utf-8')
-    hashed_bytes = hashed_password.encode('utf-8')
-    return bcrypt.checkpw(password_bytes, hashed_bytes)
+    # Check if username exists
+    if user_exists(username):
+        print(" Username already exists. Please choose another one.")
+        return
+
+    hashed, salt = hash_password(password)
+
+    with open(USER_DATA_FILE, "a") as f:
+        f.write(f"{username}:{salt}:{hashed}\n")
+
+    print(" Account created successfully!")
 
 
-#  USER MANAGEMENT (LEGACY FILE-BASED SYSTEM)
+def login_user(username, password):
+    """
+    Validates login by comparing stored username/password hash.
+    """
+    if not os.path.exists(USER_DATA_FILE):
+        print(" No user database found. No accounts exist yet.")
+        return False
 
+    with open(USER_DATA_FILE, "r") as f:
+        for line in f:
+            stored_username, salt, stored_hash = line.strip().split(":")
 
+            if stored_username == username:
+                # Recompute hash with the same salt
+                hashed_input, _ = hash_password(password, salt)
+
+                if hashed_input == stored_hash:
+                    print(" Login successful! Welcome back.")
+                    return True
+                else:
+                    print(" Incorrect password.")
+                    return False
+
+    print(" Username not found.")
+    return False
+
+# MENU INTERFACE
 def user_exists(username):
     """
     Checks if a username already exists in the text file.
@@ -53,54 +77,6 @@ def user_exists(username):
             if stored_username == username:
                 return True
     return False
-
-
-def register_user(username, password):
-    """
-    Registers a new user.
-    - Validates that the username isn't taken.
-    - Hashes the password before saving.
-    """
-    if user_exists(username):
-        print(f"  The username '{username}' is already in use. Please try a different one.")
-        return False
-
-    hashed_pw = hash_password(password)
-    with open(USER_DATA_FILE, 'a') as f:
-        f.write(f"{username}:{hashed_pw}\n")
-
-    print(f" Account '{username}' created successfully! You can now log in.")
-    return True
-
-
-def login_user(username, password):
-    """
-    Logs a user in by checking credentials in the text file.
-    Returns True if login succeeds, False if not.
-    """
-    if not os.path.exists(USER_DATA_FILE):
-        print("⚠️  No accounts found. Please register first.")
-        return False
-
-    with open(USER_DATA_FILE, 'r') as f:
-        for line in f:
-            stored_username, stored_hashed = line.strip().split(":")
-            if stored_username == username:
-                if verify_password(password, stored_hashed):
-                    print(f" Welcome back, {username}! You’re now logged in.")
-                    return True
-                else:
-                    print(" Incorrect password. Please try again.")
-                    return False
-
-    print(" No account found with that username. Please check your entry or sign up.")
-    return False
-
-
-
-#  INPUT VALIDATION
-
-
 def validate_username(username):
     """
     Ensures a username meets the following rules:
@@ -129,52 +105,6 @@ def validate_password(password):
     if not any(c.isupper() for c in password):
         return False, "Password must contain at least one uppercase letter."
     return True, ""
-
-
-
-#  MIGRATION TOOL (FROM TEXT FILE TO DATABASE)
-
-
-def migrate_users_from_file(filepath='DATA/users.txt'):
-    """
-    Moves existing users from a legacy text file into the database.
-    - Skips users who already exist in the database.
-    - Creates the users table if it doesn’t exist.
-    """
-    conn = connect_database()
-    create_users_table(conn)
-
-    if not os.path.exists(filepath):
-        print(f"  File '{filepath}' not found. Skipping migration.")
-        return
-
-    migrated_count = 0
-
-    with open(filepath, 'r') as f:
-        for line in f:
-            line = line.strip()
-            if not line or ':' not in line:
-                continue  # skip lines that aren’t properly formatted
-
-            username, hashed_pw = line.split(":", 1)
-
-            # Skip if user is already in the database
-            if get_user_by_username(conn, username):
-                print(f" Skipping existing user: {username}")
-                continue
-
-            # Insert the migrated user
-            insert_user(conn, username, hashed_pw)
-            migrated_count += 1
-            print(f" Migrated user: {username}")
-
-    conn.close()
-    print(f"\n Migration complete! {migrated_count} user(s) migrated successfully.")
-
-
-
-#  MENU INTERFACE
-
 
 def display_menu():
     """
@@ -205,7 +135,7 @@ def main():
 
         if choice == '1':
             # --- User Registration ---
-            print("\n🆕 Create a New Account")
+            print("\n Create a New Account")
             username = input("Choose a username: ").strip()
 
             # Check username validity
