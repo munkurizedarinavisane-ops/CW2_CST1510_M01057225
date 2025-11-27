@@ -13,7 +13,6 @@ def create_users_table(conn):
     """)
     conn.commit()
 
-
 def create_cyber_incidents_table(conn):
     """Table for Cybersecurity Incident Records."""
     cursor = conn.cursor()
@@ -30,7 +29,6 @@ def create_cyber_incidents_table(conn):
     """)
     conn.commit()
 
-
 def create_datasets_metadata_table(conn):
     """Table for Data Science metadata records."""
     cursor = conn.cursor()
@@ -44,7 +42,6 @@ def create_datasets_metadata_table(conn):
         )
     """)
     conn.commit()
-
 
 def create_it_tickets_table(conn):
     """Table for IT Support Tickets."""
@@ -60,10 +57,20 @@ def create_it_tickets_table(conn):
     """)
     conn.commit()
 
-
 def create_all_tables(conn):
     """Create all tables."""
     create_users_table(conn)
     create_cyber_incidents_table(conn)
     create_datasets_metadata_table(conn)
     create_it_tickets_table(conn)
+
+if __name__ == "__main__":
+    # Connect to SQLite database (creates it if it doesn't exist)
+    conn = sqlite3.connect("database.db")
+    print("Connected to database.")
+
+    # Create all tables
+    create_all_tables(conn)
+
+    print("All tables created successfully!")
+    conn.close()

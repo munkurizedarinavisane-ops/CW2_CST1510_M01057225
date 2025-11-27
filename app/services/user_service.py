@@ -1,9 +1,10 @@
 import os
 import bcrypt
 
-from app import connect_database
-from app import create_users_table
-from app import get_user_by_username, insert_user
+from app.db import connect_database
+
+from app.schema import create_users_table
+from app.users import get_user_by_username, insert_user
 
 # This file stores users for the legacy text-based system.
 # It's used for compatibility and migration to the database.
@@ -35,6 +36,43 @@ def verify_password(plain_text_password, hashed_password):
     hashed_bytes = hashed_password.encode('utf-8')
     return bcrypt.checkpw(password_bytes, hashed_bytes)
 
+# ============================================================
+#  DATABASE-BASED LOGIN FOR STREAMLIT (WEEK 9)
+# ============================================================
+
+def authenticate_user(username, password):
+    """
+    Authenticates a user using the SQLite database (Week 8+9 login system).
+    Returns a dict with username + role if valid, otherwise None.
+    """
+
+    conn = connect_database()
+    cursor = conn.cursor()
+
+    try:
+        cursor.execute(
+            "SELECT username, password_hash, role FROM users WHERE username = ?",
+            (username,)
+        )
+        user = cursor.fetchone()
+
+    except Exception as e:
+        print("Database error:", e)
+        conn.close()
+        return None
+
+    conn.close()
+
+    if not user:
+        return None  # username does not exist
+
+    stored_hash = user["password_hash"]
+
+    # Validate password using bcrypt
+    if bcrypt.checkpw(password.encode(), stored_hash.encode()):
+        return {"username": user["username"], "role": user["role"]}
+
+    return None
 
 #  USER MANAGEMENT (LEGACY FILE-BASED SYSTEM)
 

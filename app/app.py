@@ -13,8 +13,10 @@ st.sidebar.title("Navigation")
 page = st.sidebar.radio("Go to", ["Login", "Cybersecurity Dashboard"])
 
 if page == "Login":
-    from app.pages.Login import show
-    show()
+    from app.pages import Login
+
+    Login.show()
+
 elif page == "Cybersecurity Dashboard":
     from app.pages.incidents import show
     show()
