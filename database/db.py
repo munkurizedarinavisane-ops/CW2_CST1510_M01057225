@@ -2,7 +2,7 @@ import sqlite3
 from pathlib import Path
 
 # Ensure DATA folder exists
-DATA_FOLDER = Path("DATA")
+DATA_FOLDER = Path("../app/data")
 DATA_FOLDER.mkdir(exist_ok=True)
 
 # Path to your SQLite database file

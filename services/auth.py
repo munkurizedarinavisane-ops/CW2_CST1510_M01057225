@@ -6,7 +6,7 @@ import getpass
 from pathlib import Path
 import sqlite3
 
-USERS_TXT = Path("users.txt")
+USERS_TXT = Path("../users.txt")
 
 
 def hash_password(plain_password: str) -> bytes:

@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-from app.db import execute_query
+from database.db import execute_query
 from datetime import datetime
 import plotly.express as px
 

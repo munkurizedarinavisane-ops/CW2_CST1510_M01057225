@@ -1,10 +1,10 @@
 import os
 import bcrypt
 
-from app.db import connect_database
+from database.db import connect_database
 
 from app.schema import create_users_table
-from app.users import get_user_by_username, insert_user
+from models import get_user_by_username, insert_user
 
 # This file stores users for the legacy text-based system.
 # It's used for compatibility and migration to the database.

@@ -66,7 +66,7 @@ def create_all_tables(conn):
 
 if __name__ == "__main__":
     # Connect to SQLite database (creates it if it doesn't exist)
-    conn = sqlite3.connect("database.db")
+    conn = sqlite3.connect("../database/database.db")
     print("Connected to database.")
 
     # Create all tables

@@ -1,5 +1,5 @@
 import streamlit as st
-from app.services.user_service import authenticate_user
+from services.user_service import authenticate_user
 
 def show():
     st.title("Login")
@@ -24,3 +24,10 @@ def show():
             st.switch_page("pages/Dashboard.py")
         else:
             st.error("Invalid username or password")
+
+
+if "user" in st.session_state:
+    st.sidebar.success(f"Logged in as {st.session_state['user']['username']}")
+    if st.sidebar.button("Logout"):
+        st.session_state.pop("user", None)
+        st.experimental_rerun()

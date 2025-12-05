@@ -1,4 +1,4 @@
-from app.db import connect_database
+from database.db import connect_database
 
 def get_user_by_username(username):
     """Retrieve user by username."""

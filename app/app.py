@@ -1,6 +1,6 @@
 import streamlit as st
 from app.schema import create_all_tables
-from app.db import connect_database
+from database.db import connect_database
 
 # Ensure tables exist
 conn = connect_database()
@@ -13,10 +13,10 @@ st.sidebar.title("Navigation")
 page = st.sidebar.radio("Go to", ["Login", "Cybersecurity Dashboard"])
 
 if page == "Login":
-    from app.pages import Login
+    from pages import Login
 
     Login.show()
 
 elif page == "Cybersecurity Dashboard":
-    from app.pages.incidents import show
+    from models import show
     show()
